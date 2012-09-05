@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import numpy,scipy,scipy.interpolate,iniparse,ratty1
+import numpy,scipy,scipy.interpolate,iniparse,ratty2
 
 
 #smoothing functions from http://www.swharden.com/blog/2008-11-17-linear-data-smoothing-in-python/
 
 c=299792458. #speed of light in m/s
 #cal_file_path = "/etc/rfi_sys/cal_files/"; #For when you have everything working and ready to install with distutils
-cal_file_path = "/etc/ratty1/cal_files/"; #For development
+cal_file_path = "/etc/ratty2/cal_files/"; #For development
 def cal_files(filename):
     return "%s%s"%(cal_file_path, filename)
 
@@ -133,7 +133,7 @@ class cal:
             n_chans,bandwidth, n_par_streams, bitstream, fft_shfit, adc_type, desired_rf_level, spectrum_bits, antenna_bandpass, atten_gain, system_bandpass, fe_gain and acc_period"""
         self.config={}
         if kwargs.has_key('config_file'):
-            self.config = ratty1.conf.rattyconf(kwargs['config_file'])
+            self.config = ratty2.conf.rattyconf(kwargs['config_file'])
 
         for key in kwargs:
             self.config[key]=kwargs[key]

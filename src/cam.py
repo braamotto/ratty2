@@ -6,22 +6,22 @@ Hard-coded for 32bit unsigned numbers.
 \nAuthor: Jason Manley, Feb 2011.
 '''
 
-import corr,time,numpy,struct,sys,logging,ratty1,cal,conf,iniparse, os
+import corr,time,numpy,struct,sys,logging,ratty2,cal,conf,iniparse, os
 
 
 class spec:
-    def __init__(self, config_file='/etc/ratty1/default', connect=False, log_handler=None, log_level=logging.INFO):
+    def __init__(self, config_file='/etc/ratty2/default', connect=False, log_handler=None, log_level=logging.INFO):
 
         if log_handler == None: log_handler=corr.log_handlers.DebugLogHandler(100)
-        if config_file == None: config_file='/etc/ratty1/default'
+        if config_file == None: config_file='/etc/ratty2/default'
         self.lh = log_handler
-        self.logger = logging.getLogger('RATTY1')
+        self.logger = logging.getLogger('RATTY2')
         self.logger.setLevel(log_level)
         self.logger.addHandler(self.lh)
         self.config_file=config_file
 
-        self.config=ratty1.conf.rattyconf(config_file=self.config_file)
-        self.cal=ratty1.cal.cal(config_file=self.config_file)
+        self.config=ratty2.conf.rattyconf(config_file=self.config_file)
+        self.cal=ratty2.cal.cal(config_file=self.config_file)
 
         #self.mode = self.sys_config['digital_system_parameters']['mode'].strip()
         self.n_chans = self.config['n_chans']
@@ -412,12 +412,12 @@ class spec:
         rv['adc_raw']=self.fpga.read_uint('adc_sum_sq0')
         rv['adc_rms_raw']=numpy.sqrt(rv['adc_raw']/float(self.adc_levels_acc_len))
         rv['adc_rms_mv']=rv['adc_rms_raw']*self.config['adc_v_scale_factor']*1000
-        rv['adc_dbm']=ratty1.cal.v_to_dbm(rv['adc_rms_mv']/1000.)
+        rv['adc_dbm']=ratty2.cal.v_to_dbm(rv['adc_rms_mv']/1000.)
         #backout fe gain
         rv['input_dbm']=rv['adc_dbm']-self.config['fe_gain']
         #backout variable attenuation
         rv['input_dbm']-=self.atten_gain_map[self.rf_status_get()[1]]
-        rv['input_rms_mv']=ratty1.cal.dbm_to_v(rv['input_dbm']*1000)
+        rv['input_rms_mv']=ratty2.cal.dbm_to_v(rv['input_dbm']*1000)
         return rv
 
     def status_get(self):

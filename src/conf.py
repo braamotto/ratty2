@@ -214,6 +214,6 @@ def get_gains_from_csv(filename):
     return freqs,gains
 
 
-cal_file_path = "/etc/ratty1/cal_files/"; #For development
+cal_file_path = "/etc/ratty2/cal_files/"; #For development
 def cal_files(filename):
     return "%s%s"%(cal_file_path, filename)

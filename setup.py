@@ -23,6 +23,6 @@ setup(name = 'ratty2',
     package_dir = {'ratty2':'src'},
     packages = ['ratty2'],
     scripts=glob.glob('scripts/*'),
-    data_files=[('/etc/ratty2', glob.glob('config_files/*')),('/etc/ratty1/cal_files', glob.glob('cal_files/*'))]
+    data_files=[('/etc/ratty2', glob.glob('config_files/*')),('/etc/ratty2/cal_files', glob.glob('cal_files/*'))]
 )
 
