@@ -7,7 +7,7 @@ You need to have KATCP and CORR installed. Get them from http://pypi.python.org/
 #Revs:
 #2012-07-18 JRM New object oriented cam/cal interface.
 #2011-02    JRM First release
-import corr,time,numpy,struct,sys,logging, os, ratty1
+import corr,time,numpy,struct,sys,logging, os, ratty2
 
 def exit_fail():
     print 'FAILURE DETECTED. Log entries:\n',
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     verbose=opts.verbose
 
 try:
-    r = ratty1.cam.spec(config_file=config_file)
+    r = ratty2.cam.spec(config_file=config_file)
     co=r.cal
     print 'Config file %s parsed ok!'%(r.config_file)
     print 'Connecting to ROACH %s...'%r.config['roach_ip_str'],

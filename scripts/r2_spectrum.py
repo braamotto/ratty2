@@ -19,7 +19,7 @@ Plots the spectrum from an RFI monitoring spectrometer.\n
 
 import matplotlib
 matplotlib.use('TkAgg')
-import pylab,h5py,ratty1, time, corr, numpy, struct, sys, logging, os
+import pylab,h5py,ratty2, time, corr, numpy, struct, sys, logging, os
 import iniparse
 
 # what format are the snap names and how many are there per antenna
@@ -49,20 +49,22 @@ def exit_clean():
     exit()
 
 def filewrite(spectrum,timestamp,acc_cnt,status):
-    cnt=f['spectra'].shape[0]-1
+    cnt=f['spectra'].shape[0]
     print '  Storing entry %i...'%cnt,
     sys.stdout.flush()
+    for name in ['spectra','acc_cnt','timestamp']:
+        f[name].resize(cnt+1, axis=0)
     f['spectra'][cnt]   = spectrum
     f['acc_cnt'][cnt]   = acc_cnt
     f['timestamp'][cnt] = timestamp
-    for name in ['spectra','acc_cnt','timestamp']:
-        f[name].resize(cnt+2, axis=0)
     for stat in status:
         try:
+            f[stat].resize(cnt+1, axis=0)
+            #print 'Trying to store %s: '%stat,status[stat]
             f[stat][cnt]=status[stat]
-            f[stat].resize(cnt+2, axis=0)
         except KeyError:
-            f.create_dataset(stat,shape=[1],maxshape=[None])
+            #print 'Creating dataset to store %s: '%stat,status[stat]
+            f.create_dataset(stat,shape=[1],maxshape=[None],data=status[stat])
             #f['adc_overrange'][cnt] = status['adc_overrange']
             #f['fft_overrange'][cnt] = status['fft_overrange']
             #f['adc_shutdown'][cnt] = status['adc_shutdown']
@@ -243,7 +245,7 @@ if __name__ == '__main__':
 
 try:
     if play_filename==None:
-        r = ratty1.cam.spec(config_file=config_file)
+        r = ratty2.cam.spec(config_file=config_file)
         co=r.cal
         print 'Config file %s parsed ok!'%(r.config_file)
         print 'Connecting to ROACH %s...'%r.config['roach_ip_str'],
@@ -287,7 +289,7 @@ try:
                     if r.config[key]==None: f['/'].attrs[key]='none'
                     elif type(r.config[key])==dict: 
                         f[key]=r.config[key].items()
-                        print 'Stored a dict!'
+#                        print 'Stored a dict!'
 
         last_cnt=r.fpga.read_uint('acc_cnt')
 
@@ -304,7 +306,7 @@ try:
                 if len(f[key])>1: conf_ovr[key]=f[key][:]
                 else: conf_ovr[key]=f[key]
         conf_ovr['atten_gain_map']=dict(conf_ovr['atten_gain_map'])
-        co=ratty1.cal.cal(**conf_ovr)
+        co=ratty2.cal.cal(**conf_ovr)
 
         n_accs      =f['/'].attrs['n_accs']
         n_chans     =f['/'].attrs['n_chans']
@@ -313,7 +315,7 @@ try:
         rf_gain     =f['/'].attrs['rf_gain']
         fft_shift   =f['/'].attrs['fft_shift']
         freqs       =co.config['freqs']
-        fft_scale   =2**(ratty1.cal.bitcnt(fft_shift))
+        fft_scale   =2**(ratty2.cal.bitcnt(fft_shift))
 
 
     if co.config['antenna_bandpass_calfile'] == 'none':

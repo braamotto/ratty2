@@ -450,17 +450,18 @@ class spec:
         return self.acc_time,self.n_accs
 
     def get_adc_snapshot(self,trig_level=-1):
-        if self.config['adc_n_bits'] != 8:
-            self.logger.error("This function is only designed to work with 8 bit ADCs!")
-            raise RuntimeError("This function is only designed to work with 8 bit ADCs!")
         if trig_level>0: 
             self.fpga.write_int('trig_level',trig_level)
             circ_capture=True
         else:
             self.fpga.write_int('trig_level',0)
             circ_capture=False
-
-        return numpy.fromstring(self.fpga.snapshot_get('snap_adc0',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int8)
+        if self.config['adc_n_bits'] == 8:
+            #self.logger.error("This function is only designed to work with 8 bit ADCs!")
+            #raise RuntimeError("This function is only designed to work with 8 bit ADCs!")
+            return numpy.fromstring(self.fpga.snapshot_get('snap_adc0',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int8)
+        if self.config['adc_n_bits'] > 8 and self.config['adc_n_bits'] <= 16:
+            return numpy.fromstring(self.fpga.snapshot_get('snap_adc0',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int16).byteswap()
 
     def adc_temp_get(self):
         if self.adc_type== 'katadc':

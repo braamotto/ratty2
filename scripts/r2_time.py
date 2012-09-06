@@ -23,7 +23,7 @@ Revisions:
 
 import matplotlib
 matplotlib.use('TkAgg')
-import ratty1, time, corr, numpy, struct, sys, logging, pylab, h5py, os, iniparse, csv
+import ratty2, time, corr, numpy, struct, sys, logging, pylab, h5py, os, iniparse, csv
 
 def exit_fail():
     print 'FAILURE DETECTED. Log entries:\n',
@@ -278,7 +278,7 @@ if __name__ == '__main__':
 
 try:
     if play_filename==None:
-        r = ratty1.cam.spec(config_file=config_file)
+        r = ratty2.cam.spec(config_file=config_file)
         co=r.cal
         print 'Config file %s parsed ok!'%(r.config_file)
         print 'Connecting to ROACH %s...'%r.config['roach_ip_str'],
@@ -363,7 +363,7 @@ try:
                 if len(f[key])>1: conf_ovr[key]=f[key][:]
                 else: conf_ovr[key]=f[key]
         conf_ovr['atten_gain_map']=dict(conf_ovr['atten_gain_map'])
-        co=ratty1.cal.cal(**conf_ovr)
+        co=ratty2.cal.cal(**conf_ovr)
 
         rf_gain=co.config['rf_gain']
         trig_scale_factor=co.get_input_adc_v_scale_factor(rf_gain)*co.config['adc_v_scale_factor']
