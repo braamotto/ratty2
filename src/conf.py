@@ -53,7 +53,7 @@ class rattyconf:
       #  for item in ['antenna_mapping', 'sync_time']:
       #      if not os.path.exists(VAR_RUN + '/' + item + '.' + self.config_file_name):
       #          f = open(VAR_RUN + '/' + item + '.' + self.config_file_name, 'w')
-      #          f.write(chr(0))
+      #          f.write(chr(0)) 
       #          f.close()
       #          #os.chmod(VAR_RUN+'/' + item,0o777)
         return exists
@@ -64,7 +64,7 @@ class rattyconf:
             raise RuntimeError('Error opening config file or runtime variables.')
         self.config['front_led_layout']=['adc_clip','adc_shutdown','fft_overflow','quantiser_overflow','new_accumulation','sync','NA','NA']
         self.config['snap_name'] = 'snap_adc'
-        self.config['spectrum_bram_out_prefix'] = 'store'
+        self.config['spectrum_bram_out_prefix'] =  'store_a'#'vacc_out'#
         
         #self.mode = self.sys_config['digital_system_parameters']['mode'].strip()
         self.read_int('digital_system_parameters','n_chans')
@@ -115,9 +115,10 @@ class rattyconf:
             self.config['rf_gain_range']=(-31.5,0,0.5)
             self.config['adc_demux'] = 4
             self.config['adc_n_bits'] = 10
-            self.config['adc_v_scale_factor']=1/368.
+            self.config['adc_v_scale_factor']=(0.250/512)
             self.config['adc_low_level_warning']=-35
             self.config['adc_high_level_warning']=0
+            self.read_str('analogue_frontend','adc_cal_file')                       
         else:
             raise RuntimeError("adc_type not understood. expecting katadc or iadc.")
 
