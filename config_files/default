@@ -1,26 +1,53 @@
 [digital_system_parameters]
-bitstream = r_spec_1ghz_16k_kadc_r108_2011_Nov_09_1541.bof
-n_chans = 16384
+bitstream = ratty2_32k_8tap_12b_2013_Jan_23_1343.bof.gz
+
+
+#n_chans = 16384
+n_chans = 32768
+#How many parallel streams come out of the FFT (how many BRAMs must we read and interleave)?
 n_par_streams = 4
-bandwidth = 900000000
-adc_type = katadc
-desired_rf_level = -20
+
+
+#How many uint bits to represent each value in the BRAMs? Default is uint64.
 spectrum_bits = 64
-fft_shift = 16383
-acc_period=1 
+
+#System digital bandwidth in Hz
+bandwidth = 900000000
+#bandwidth = 850000000
+
+#supports iadc and katadc, only tested with katadc, YMMV with iADC.
+adc_type = adc1x1800-10
+#adc_type = iadc
+
+#When auto-attenuating, what is the target RF level in dBm:
+desired_rf_level = 0
+
+#supports iadc and katadc, only tested with katadc, YMMV with iADC.
+#fft_shift = 16383
+fft_shift = 32736
 adc_levels_acc_len=65536
+
+#How long do you want to accumulate in seconds?
+acc_period=1 
 
 [connection]
 katcp_port = 7147
-roach_ip = 192.168.64.112
+roach_ip = 192.168.14.64
 
 [analogue_frontend]
-#set rf_gain to desired level in dB, or else specify 'auto' for automatic
-ignore_low_freq=0
-ignore_high_freq=900000000
+#set rf_gain to desired level in dB, or else specify 'auto' for automatic:
+rf_gain=0
+
+#don't plot below 10MHz or above 890MHz (this is usually the gaurd band for your anti-aliasing filters, and the low cutoff of your LNA):
+ignore_low_freq=10000000
+ignore_high_freq=890000000
+
+#How much gain does your frontend RF chain have, in dB?
 fe_gain=0
-rf_gain=auto
+
 #Enter none if there is no cal file:
 atten_gain_map = none
 system_bandpass = none
 antenna_bandpass = none
+
+adc_cal_file = /etc/ratty2/cal_files/adc_bandpass_20-890MHz_n10dBm_input_32K_sn004.csv
