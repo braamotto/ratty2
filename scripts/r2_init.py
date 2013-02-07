@@ -13,7 +13,7 @@ def exit_fail():
     print 'FAILURE DETECTED. Log entries:\n',
     try:
         r.lh.printMessages()
-        r.fpga.stop()
+        r.fpga.stop()        
     except Exception as e:
         print e
         pass
