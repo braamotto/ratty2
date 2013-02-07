@@ -55,6 +55,7 @@ class spec:
         self.antenna_bandpass = self.cal.antenna_bandpass
         self.atten_gain_map = self.cal.atten_gain_map
         #self.af = self.cal.ant_gain()
+        self.fft_shift_gain = 0
 
         if connect:
             self.connect()
@@ -117,12 +118,54 @@ class spec:
             if print_progress: print log_str
             self.logger.info(log_str)
 
+    def cal_fft_shift(self):
+        self.ctrl_set(mrst='pulse',cnt_rst='pulse',clr_status='pulse',flasher_en=False)
+        stat=self.status_get()
+        fft_shift_adj = self.fft_shift
+        while not(stat['fft_overrange']): 
+            fft_shift_adj = fft_shift_adj << 1
+            self.fft_shift_set(fft_shift_adj)
+            self.ctrl_set(mrst='pulse',cnt_rst='pulse',clr_status='pulse',flasher_en=False)
+            stat=self.status_get()
+        fft_shift_adj = fft_shift_adj >> 1
+        self.fft_shift_set(fft_shift_adj)
+        print ''
+        print '\tSet FFT shift schedule to %X'%(fft_shift_adj & self.fft_shift),
+        self.fft_shift = fft_shift_adj & self.fft_shift
+
+    def setup_ratty_rf(self):
+        
+        ip_str = '%s'%(self.roach_ip)
+        print ip_str
+        katcp = corr.katcp_serial.SerialClient(ip_str, timeout=3)
+        time.sleep(0.2)
+        print katcp.is_connected()
+        time.sleep(0.2)
+        #katcp.set_atten_db(<attenuator>,<db>) 
+        katcp.set_atten_db(0,31)   
+        time.sleep(0.2)    
+        print 'Setting Ratty2 RF attenuation to max (31dB)'  
+        #<attenuator> can be set to 1/2/3. 0 means all of them.
+        #<db> can be set between 0 and 31
+        
+        #katcp.set_freq_range_switch(<freq_range>)
+        katcp.set_freq_range_switch(3)
+        time.sleep(0.2)
+        print 'Selecting RF freq range 0 - 828 MHz'
+        #<freq_range> can be set between 1 and 4
+        #1: 0 - 828 MHz   2: 800 - 1100 MHz - Not implemented  3: 900 - 1670 MHz  4: currently not connected
+        
+
     def initialise(self,skip_program=False, input_sel='Q',print_progress=False):
         """Initialises the system to defaults."""
+        # print 'Setting up Ratty2 RF'
+        # self.setup_ratty_rf()
+
         if print_progress:
             print '\tProgramming FPGA...',
             sys.stdout.flush()
         if not skip_program:
+            res = self.fpga.upload_bof('/etc/ratty2/boffiles/'+self.bitstream,3333)
             self.fpga.progdev(self.bitstream)
             if print_progress: print 'ok'
         elif print_progress: print 'skipped'
@@ -157,8 +200,13 @@ class spec:
             print '\tConfiguring FFT shift schedule...',
             sys.stdout.flush()
         self.fft_shift_set(self.fft_shift)
+
+        #self.cal_fft_shift()
+
+
         if print_progress: print 'ok'
-    
+
+
         if print_progress:
             print '\tConfiguring accumulation period to %4.2f seconds...'%self.acc_period,
             sys.stdout.flush()
@@ -190,7 +238,7 @@ class spec:
         est_rate=round(self.fpga.est_brd_clk())
         if est_rate>(self.fpga_clk/1e6 +1) or est_rate<(self.fpga_clk/1e6 -1):
             self.logger.error('FPGA clock rate is %i MHz where we expect it to be %i MHz.'%(est_rate,self.fpga_clk/1e6))
-            raise RuntimeError('FPGA clock rate is %i MHz where we expect it to be %i MHz.'%(est_rate,self.fpga_clk/1e6))
+            #raise RuntimeError('FPGA clock rate is %i MHz where we expect it to be %i MHz.'%(est_rate,self.fpga_clk/1e6))
         return est_rate
 
     def getSpectra(self,n_acc):
@@ -253,8 +301,16 @@ class spec:
             time.sleep(0.1)
             #print "cnt = " + str(self.fpga.read_uint('acc_cnt'))
         spectrum = numpy.zeros(self.n_chans)              #Get spectra
+        spectrum1 = numpy.zeros(self.n_chans)              #Get spectra
+        spec_d = numpy.zeros(self.n_chans)              #Get spectra
         for i in range(self.n_par_streams):
             spectrum[i::self.n_par_streams] = numpy.fromstring(self.fpga.read('%s%i'%(self.spectrum_bram_out_prefix,i),self.n_chans/self.n_par_streams*8),dtype=numpy.uint64).byteswap()
+        #spectrum1 = numpy.fromstring(self.fpga.read('%s%i'%(self.spectrum_bram_out_prefix,i),self.n_chans*8),dtype=numpy.uint64).byteswap()
+        spec_d = numpy.subtract(spectrum1,spectrum)
+        print(spectrum1)
+        print(spectrum)
+        if (numpy.max(spec_d) == 0):
+            print "spectrums match!"
         stat = self.status_get()
         ampls = self.adc_amplitudes_get()
         stat['adc_level'] = ampls['adc_dbm']
@@ -282,7 +338,7 @@ class spec:
         ret['fft_shift'] = self.fft_shift_get()
         ret['rf_gain'] = self.rf_status_get()[1]
         ret['fe_gain'] = self.fe_gain
-        ret['antenna_calfile'] = self.antenna_bandpass_calfile
+        ret['antenna_calfile'] = self.antenna_bandpass_calfile 
         ret['bandpass_calfile'] = self.system_bandpass_calfile
         ret['atten_gain_calfile']=self.atten_gain_calfile
         ret['system_bandpass'] = self.system_bandpass
@@ -305,7 +361,7 @@ class spec:
             Input is an integer representing a binary bitmask for shifting.
             If not specified as a parameter to this function (or a negative value is supplied), program the default level."""
         if fft_shift_schedule<0: fft_shift_schedule=self.fft_shift
-        self.fpga.write_int('fft_shift',fft_shift_schedule)
+        self.fpga.write_int('fft_shift',fft_shift_schedule) 
         self.fft_shift=fft_shift_schedule
         self.fft_scale=2**(cal.bitcnt(fft_shift_schedule))
         self.logger.info("Set FFT shift to %8x (scaling down by %i)."%(fft_shift_schedule,self.fft_scale))
@@ -380,7 +436,8 @@ class spec:
                 self.fpga.write_int('adc_ctrl0',(1<<31)+int((0-gain)*2))
                 #print 'Set RF gain register to %x'%int((0-gain)*2)
             elif self.adc_type == 'adc1x1800-10':
-                self.fpga.write_int('adc_ctrl0',(1<<31)+int((0-gain)*2))
+                #self.fpga.write_int('adc_ctrl0',(1<<31)+int((0-gain)*2))
+                value = 0
             else: raise RuntimeError("Sorry, your ADC type is not supported.")
 
     def rf_status_get(self):
@@ -394,7 +451,7 @@ class spec:
             self.rf_gain=0.0-(value&0x3f)*0.5
             return (bool(value&(1<<31)),self.rf_gain)
         elif self.adc_type == 'adc1x1800-10':
-            value = self.fpga.read_uint('adc_ctrl0')
+            value = 0 #self.fpga.read_uint('adc_ctrl0')
             self.rf_gain=0.0-(value&0x3f)*0.5
             return (bool(value&(1<<31)),self.rf_gain)
         else: raise RuntimeError("Sorry, your ADC type is not supported.")
@@ -410,8 +467,10 @@ class spec:
             adc_bits=8
         rv = {}
         rv['adc_raw']=self.fpga.read_uint('adc_sum_sq0')
+        print 'adc_sum_sq0 %X'%(rv['adc_raw'])
         rv['adc_rms_raw']=numpy.sqrt(rv['adc_raw']/float(self.adc_levels_acc_len))
         rv['adc_rms_mv']=rv['adc_rms_raw']*self.config['adc_v_scale_factor']*1000
+        print 'adc_levels_acc_len %X'%(float(self.adc_levels_acc_len))
         rv['adc_dbm']=ratty2.cal.v_to_dbm(rv['adc_rms_mv']/1000.)
         #backout fe gain
         rv['input_dbm']=rv['adc_dbm']-self.config['fe_gain']
@@ -459,9 +518,9 @@ class spec:
         if self.config['adc_n_bits'] == 8:
             #self.logger.error("This function is only designed to work with 8 bit ADCs!")
             #raise RuntimeError("This function is only designed to work with 8 bit ADCs!")
-            return numpy.fromstring(self.fpga.snapshot_get('snap_adc0',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int8)
+            return numpy.fromstring(self.fpga.snapshot_get('snap_adc',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int8)
         if self.config['adc_n_bits'] > 8 and self.config['adc_n_bits'] <= 16:
-            return numpy.fromstring(self.fpga.snapshot_get('snap_adc0',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int16).byteswap()
+            return numpy.fromstring(self.fpga.snapshot_get('snap_adc',man_valid=True,man_trig=True,circular_capture=circ_capture,wait_period=-1)['data'],dtype=numpy.int16).byteswap()
 
     def adc_temp_get(self):
         if self.adc_type== 'katadc':
