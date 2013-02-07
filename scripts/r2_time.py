@@ -83,8 +83,10 @@ def drawDataCallback(n_samples,indep,trig_level):
     next_subplot=0
     if opts.plot_hist:
         subplots[0].cla()
-        subplots[0].set_xticks(range(-130, 131, 20))
-        histData, bins, patches = subplots[0].hist(unpackedData, bins = 256, range = (-128,128))
+        #subplots[0].set_xticks(range(-130, 131, 20))
+        #histData, bins, patches = subplots[0].hist(unpackedData, bins = 256, range = (-128,128))
+        subplots[0].set_xticks(range(-130*4, 131*4, 20))
+        histData, bins, patches = subplots[0].hist(unpackedData, bins = 256*4, range = (-128*4,128*4))
         if status['adc_overrange'] or status['adc_shutdown']:
             subplots[0].set_title('Histogram as at %s'%(time.ctime(timestamp)),bbox=dict(facecolor='red', alpha=0.5))
         else:
@@ -299,8 +301,9 @@ try:
         sample_clk=r.sample_clk
         antenna_bandpass_calfile=r.config['antenna_bandpass_calfile'].strip()
         system_bandpass_calfile=r.config['system_bandpass_calfile'].strip()
-    
+        print 'unpacked'
         unpackedData, timestamp,status = getUnpackedData(trig_level=0)
+        print 'unpacked done'
         cald=co.calibrate_adc_snapshot(raw_data=unpackedData,rf_gain=rf_gain,n_chans=n_chans) 
         freqs=cald['freqs']
         r.config['freqs']=freqs
