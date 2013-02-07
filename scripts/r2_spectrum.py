@@ -114,13 +114,24 @@ def find_n_max(data,n_max,ignore_adjacents=False):
             max_locs[loc]=n
             if numpy.min(max_levs)>this_max_lev: this_max_lev=numpy.min(max_levs)
     inds = max_levs.argsort()[::-1]
-    return max_levs[inds],max_locs[inds]     
+    return max_levs[inds],max_locs[inds]  
+
+def fft_shift_gain_calc():
+    fft_shift_gain = 0 
+    fft_shift = r.fpga.read_uint('fft_shift')
+    while not (fft_shift & 1):
+        fft_shift_gain += 6
+        fft_shift = fft_shift >> 1
+    fft_shift_gain -= 6
+    return fft_shift_gain
+      
 
 # callback function to draw the data for all the required polarisations
 def drawDataCallback(last_cnt):
     unpackedData, timestamp, last_cnt,stat = getUnpackedData(last_cnt)
     calData=co.get_calibrated_spectrum(unpackedData, rf_gain) #returns spectrum in dBm
-
+    fft_shift_gain=fft_shift_gain_calc()
+    calData-=fft_shift_gain 
 #    calData[0:chanlow]=calData[n_chans_ignore_bot]
 #    calData[chan_high:]=calData[-n_chans_ignore_top]
 
@@ -137,23 +148,24 @@ def drawDataCallback(last_cnt):
         subplot1.plot(freqs[chan_low:chan_high]/1.e6,baseline[chan_low:chan_high],'r',linewidth=5,alpha=0.5)
 
     subplot1.plot(freqs[chan_low:chan_high]/1.e6,calData[chan_low:chan_high],'b')
+    #subplot1.plot(freqs[chan_low:chan_high]/1.e6,10*numpy.log10(unpackedData[chan_low:chan_high]),'b')
+    #subplot1.plot(freqs[chan_low:chan_high]/1.e6,unpackedData[chan_low:chan_high],'b')
 
     ##collapse data for plotting:
     #collapse_factor=len(unpackedData)/plot_chans
     #collapseddata=unpackedData.reshape(plot_chans,collapse_factor).sum(1)/collapse_factor
     #if plot_type == 'lin':
-    #    subplot.plot(r.freqs[::collapse_factor],collapseddata)
-    #    #Plot a horizontal line representing the average noise floor:
-    #    subplot.hlines((median_lev),0,r.freqs[-1])
+    #   subplot.plot(r.freqs[::collapse_factor],collapseddata)
+    #   #Plot a horizontal line representing the average noise floor:
+    #   subplot.hlines((median_lev),0,r.freqs[-1])
     #elif plot_type == 'log':
-    #    #subplot.semilogy(r.freqs[::collapse_factor],collapseddata)
-    #    subplot.plot(r.freqs[::collapse_factor],10*numpy.log10(collapseddata))
-    #    median_lev_db=10*numpy.log10(median_lev)
-    #    #Plot a horizontal line representing the average noise floor:
-    #    subplot.hlines(median_lev_db,0,r.freqs[-1])
-    #    subplot.annotate('%3.1fdB'%(median_lev_db),(r.freqs[-1],median_lev_db))
+    #   #subplot.semilogy(r.freqs[::collapse_factor],collapseddata)
+    #   subplot.plot(r.freqs[::collapse_factor],10*numpy.log10(collapseddata))
+    #   median_lev_db=10*numpy.log10(median_lev)
+    #   #Plot a horizontal line representing the average noise floor:
+    #   subplot.hlines(median_lev_db,0,r.freqs[-1])
+    #   subplot.annotate('%3.1fdB'%(median_lev_db),(r.freqs[-1],median_lev_db))
     
-
     if plot_diff:
         dd=calData[chan_low:chan_high]-baseline[chan_low:chan_high]
         subplot2.cla()
