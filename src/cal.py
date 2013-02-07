@@ -42,6 +42,16 @@ def smoothListGaussian(list,strippedXs=False,degree=5):
          smoothed[i]=sum(numpy.array(list[i:i+window])*weight)/sum(weight)  
      return smoothed  
 
+def calc_mkadc_bandpass(chans,adc_cal_file_i):
+    gain_mkAdc = getDictFromCSV(adc_cal_file_i)#('/home/henno/adc_bandpass_20-890MHz_n10dBm_input_sn004.csv')
+    x = numpy.arange(0,len(gain_mkAdc),1)
+    y = numpy.zeros(len(gain_mkAdc))    
+    for i in range(len(gain_mkAdc)-1):
+        y[i] = gain_mkAdc[(i)*10.0] 
+    x_int = numpy.arange(0,len(gain_mkAdc),len(gain_mkAdc)/(chans*1.0))
+    bandFlat = numpy.subtract(10,numpy.interp(x_int, x, y))
+    return bandFlat
+
 def dmw_per_sq_m_to_dbuv(dbmw):
     # from http://www.ahsystems.com/notes/RFconversions.php: dBmW/m2 = dBmV/m - 115.8 
     return dbmw + 115.8
@@ -260,6 +270,7 @@ class cal:
 #            spectrum += self.ant_factor 
 #        return freqs,spectrum
 
+
     def get_calibrated_spectrum(self,data, desired_rf_gain):
         '''Returns a calibrated spectrum from a raw hardware spectral dump.
             Units are dBm unless an antenna was specified in your config file, in which case units are dBuV/m.\n
@@ -272,8 +283,12 @@ class cal:
         #data_return /= self.chan_width
         data_return  = 10*numpy.log10(data_return)
         data_return -= self.atten_gain_map[desired_rf_gain]
+        print 'atten_map'
+        print self.atten_gain_map[desired_rf_gain]
         data_return -= self.config['fe_gain'] 
         data_return -= 67. #overall system/algorithm gain
+        if self.config['adc_type'] == 'adc1x1800-10': 
+            data_return -= calc_mkadc_bandpass(self.config['n_chans'],self.config['adc_cal_file'])
         data_return -= self.system_bandpass
         if self.config['antenna_bandpass_calfile'] != 'none':
             data_return = dbm_to_dbuv(data_return)
