@@ -165,7 +165,8 @@ class spec:
             print '\tProgramming FPGA...',
             sys.stdout.flush()
         if not skip_program:
-            res = self.fpga.upload_bof('/etc/ratty2/boffiles/'+self.bitstream,3333)
+            res = self.fpga.upload_bof(self.bitstream,3333)
+            print res
             self.fpga.progdev(self.bitstream)
             if print_progress: print 'ok'
         elif print_progress: print 'skipped'
