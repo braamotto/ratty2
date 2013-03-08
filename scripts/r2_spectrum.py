@@ -130,8 +130,9 @@ def fft_shift_gain_calc():
 def drawDataCallback(last_cnt):
     unpackedData, timestamp, last_cnt,stat = getUnpackedData(last_cnt)
     calData=co.get_calibrated_spectrum(unpackedData, rf_gain) #returns spectrum in dBm
-    fft_shift_gain=fft_shift_gain_calc()
-    calData-=fft_shift_gain 
+    if play_filename==None:
+        fft_shift_gain=fft_shift_gain_calc()
+        calData-=fft_shift_gain 
 #    calData[0:chanlow]=calData[n_chans_ignore_bot]
 #    calData[chan_high:]=calData[-n_chans_ignore_top]
 
@@ -306,7 +307,7 @@ try:
         last_cnt=r.fpga.read_uint('acc_cnt')
 
     else:
-        last_cnt=0
+        last_cnt=1
         print 'Opening file %s...'%play_filename
         f=h5py.File(play_filename,'r')
         usrlog=f['/'].attrs['usrlog']
