@@ -213,7 +213,10 @@ class cal:
 
     def get_input_adc_v_scale_factor(self,rf_gain):
         """Provide the calibration factor to get from an ADC input voltage to the actual frontend input voltage. Does not perform any frequency-dependent calibration."""
-        return 1/(10**((self.atten_gain_map[rf_gain]+self.config['fe_gain'])/20.))
+        scale_factor = 1/(10**((self.atten_gain_map[rf_gain]+self.config['fe_gain'])/20.))
+        if self.config['adc_type'] == 'adc1x1800-10':
+            scale_factor = 1
+        return scale_factor
 
     def calibrate_adc_snapshot(self,raw_data,rf_gain,n_chans=256):
         """Calibrates a raw ADC count timedomain snapshot. Returns ADC samples in V, ADC spectrum in dBm, input spectrum in dBm and input spectrum of n_chans in dBm."""

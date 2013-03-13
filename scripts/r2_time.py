@@ -296,7 +296,8 @@ try:
         r.config['rf_gain']=rf_gain
         trig_scale_factor=r.cal.get_input_adc_v_scale_factor(rf_gain)*r.config['adc_v_scale_factor']
         n_samples=int(opts.capture_len/1.e9*r.sample_clk)
-        trig_level=int(opts.trig_level/trig_scale_factor)
+        trig_level=int((opts.trig_level/1000)/trig_scale_factor)
+        #trig_level=int(opts.trig_level/1)
         bandwidth=r.bandwidth
         sample_clk=r.sample_clk
         antenna_bandpass_calfile=r.config['antenna_bandpass_calfile'].strip()
