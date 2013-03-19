@@ -305,7 +305,7 @@ class spec:
         spectrum1 = numpy.zeros(self.n_chans)              #Get spectra
         spec_d = numpy.zeros(self.n_chans)              #Get spectra
         for i in range(self.n_par_streams):
-            spectrum[i::self.n_par_streams] = numpy.fromstring(self.fpga.read('%s%i'%(self.spectrum_bram_out_prefix,i),self.n_chans/self.n_par_streams*8),dtype=numpy.uint64).byteswap()
+            spectrum[i::self.n_par_streams] = numpy.fromstring(self.fpga.read('%s%i'%(self.spectrum_bram_out_prefix,i+1),self.n_chans/self.n_par_streams*8),dtype=numpy.uint64).byteswap()
         #spectrum1 = numpy.fromstring(self.fpga.read('%s%i'%(self.spectrum_bram_out_prefix,i),self.n_chans*8),dtype=numpy.uint64).byteswap()
         spec_d = numpy.subtract(spectrum1,spectrum)
         print(spectrum1)

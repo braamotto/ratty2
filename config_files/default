@@ -1,6 +1,5 @@
 [digital_system_parameters]
-bitstream = r2_spec_mkadc_32k_8tap_12b_2013_Mar_13_1222.bof.gz
-#bitstream = r2_spec_mkadc_32k_8tap_12b_2013_Jan_23_1343.bof
+bitstream = r2_spec_mkadc_32k_8tap_12b_2013_Mar_19_1345.bof.gz
 
 #n_chans = 16384
 n_chans = 32768
@@ -32,7 +31,7 @@ acc_period=1
 
 [connection]
 katcp_port = 7147
-roach_ip = 192.168.14.64
+roach_ip = 192.168.14.65
 
 [analogue_frontend]
 #set rf_gain to desired level in dB, or else specify 'auto' for automatic:
