@@ -6,18 +6,22 @@ Author: Jason Manley
 """
 """
 Revs:
+2013-04-19  JRM Major rework to simplify for RATTY2
 2012-06-14  JRM Initial release 
 """
 LISTDELIMIT = ','
 PORTDELIMIT = ':'
 
+cal_file_path = "/etc/ratty2/cal_files/"; #For development
+
 class rattyconf:    
-    def __init__(self, config_file):
-        self.config_file = config_file
+    def __init__(self, **kwargs):
+        self.config_file = kwargs['config_file']
         self.config_file_name = os.path.split(self.config_file)[1]
         self.cp = iniparse.INIConfig(open(self.config_file, 'rb'))
-        self.config = dict()
+        self.config = kwargs
         self.read_common()
+        self.config.update(kwargs)
 
     def __getitem__(self, item):
         #if item == 'sync_time':
@@ -35,6 +39,9 @@ class rattyconf:
 
     def __setitem__(self,item,value):
         self.config[item]=value
+
+    def has_key(self,key):
+        return self.config.has_key(key)
 
     def file_exists(self):
         try:
@@ -67,88 +74,47 @@ class rattyconf:
         self.config['spectrum_bram_out_prefix'] =  'store_a'#'vacc_out'#
         
         #self.mode = self.sys_config['digital_system_parameters']['mode'].strip()
-        self.read_int('digital_system_parameters','n_chans')
-        self.read_int('digital_system_parameters','bandwidth')
-        self.read_int('digital_system_parameters','n_par_streams')
+        self.config['n_chans']=32768
+        self.config['n_par_streams']=4
+        self.read_float('digital_system_parameters','sample_clk')
         self.read_str('digital_system_parameters','bitstream')
         self.read_int('digital_system_parameters','fft_shift')
-        self.read_str('digital_system_parameters','adc_type')
-        self.read_float('digital_system_parameters','desired_rf_level')
-        self.read_int('digital_system_parameters','spectrum_bits')
         self.read_float('digital_system_parameters','acc_period')
-        self.read_float('digital_system_parameters','adc_levels_acc_len')
+        self.read_float('digital_system_parameters','adc_v_scale_factor')
+        self.config['adc_low_level_warning']=-35
+        self.config['adc_high_level_warning']=0
+        self.config['fpga_clk']=self.config['sample_clk']/8
+        self.config['adc_levels_acc_len']=65536        
+        self.config['adc_type']='mkadc 1800Msps, 10b, single input'
+        self.config['pfb_scale_factor']=101.0 #a scaling co-efficient corresponding to the gain through the digital filterbank
 
-        self.read_int('connection','katcp_port')
+        self.config['katcp_port']=7147
         self.config['roach_ip']=struct.unpack('>I',socket.inet_aton(self.get_line('connection','roach_ip')))[0]
         self.config['roach_ip_str']=self.get_line('connection','roach_ip')
-        
-        self.read_float('analogue_frontend','fe_gain')
-        self.read_float('analogue_frontend','ignore_low_freq')
+       
+        self.config['rf_gain_range']=[-31.5,0,0.5] 
+        self.read_int('analogue_frontend','band_sel')
+        self.read_float('analogue_frontend','desired_rf_level')
+        self.read_float('analogue_frontend','fe_amp')
         self.read_float('analogue_frontend','ignore_high_freq')
-        self.config['antenna_bandpass_calfile']=self.get_line('analogue_frontend','antenna_bandpass')
-        self.config['system_bandpass_calfile']=self.get_line('analogue_frontend','system_bandpass')
-        self.config['atten_gain_calfile']=self.get_line('analogue_frontend','atten_gain_map')
-        if self.get_line('analogue_frontend','rf_gain').strip() == 'auto':
-            self.config['rf_gain'] = None
-        else:  
-            self.read_float('analogue_frontend','rf_gain')
+        self.read_float('analogue_frontend','ignore_low_freq')
+        self.read_bool('analogue_frontend','flip_spectrum')
+        self.config['antenna_bandpass_calfile']=self.get_line('analogue_frontend','antenna_bandpass_calfile')
+        self.config['system_bandpass_calfile']=self.get_line('analogue_frontend','system_bandpass_calfile')
+        self.config['rf_atten_gain_calfiles']=[cf for cf in (self.get_line('analogue_frontend','rf_atten_gain_calfiles')).split(LISTDELIMIT)]
 
-        self.read_str('digital_system_parameters','adc_type')
-        if self.config['adc_type'] == 'katadc':
-            self.config['sample_clk']=self.config['bandwidth']*2
-            self.config['rf_gain_range']=(-11.5,20,0.5)
-            self.config['adc_demux'] = 4
-            self.config['adc_n_bits'] = 8
-            self.config['adc_v_scale_factor']=1/260.4
-            self.config['adc_low_level_warning']=-32
-            self.config['adc_high_level_warning']=0
-        elif self.config['adc_type'] == 'iadc':
-            self.config['sample_clk']=self.config['bandwidth']*2
-            self.config['rf_gain_range']=(-31.5,0,0.5)
-            self.config['adc_demux'] = 4
-            self.config['adc_n_bits'] = 8
-            self.config['adc_v_scale_factor']=1/368.
-            self.config['adc_low_level_warning']=-35
-            self.config['adc_high_level_warning']=0
-        elif self.config['adc_type'] == 'adc1x1800-10':
-            self.config['sample_clk']=self.config['bandwidth']*2
-            self.config['rf_gain_range']=(-31.5,0,0.5)
-            self.config['adc_demux'] = 4
-            self.config['adc_n_bits'] = 10
-            self.config['adc_v_scale_factor']=(0.250/512)
-            self.config['adc_low_level_warning']=-35
-            self.config['adc_high_level_warning']=0
-            self.read_str('analogue_frontend','adc_cal_file')                       
-        else:
-            raise RuntimeError("adc_type not understood. expecting katadc or iadc.")
+#        if self.get_line('analogue_frontend','rf_gain').strip() == 'auto':
+#            self.config['rf_gain'] = None
+#        else:  
+        try:
+            self.config['rf_attens'] = [float(att) for att in (self.get_line('analogue_frontend','rf_attens')).split(LISTDELIMIT)]
+        except:
+            pass 
+        try:
+            self.read_float('analogue_frontend','rf_atten')
+        except:
+            pass
 
-        self.config['chan_width']=numpy.float(self.config['bandwidth'])/self.config['n_chans']
-        self.config['fpga_clk']=self.config['bandwidth']/self.config['adc_demux']
-        
-        self.config['freqs']=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans'] #channel center freqs in Hz        
-        self.config['n_accs'] = int(self.config['acc_period'] * float(self.config['bandwidth'])/self.config['n_chans'])
-
-        if (self.config['system_bandpass_calfile'] != 'none'):
-            self.config['system_bandpass'] = self.get_interpolated_gains(self.config['system_bandpass_calfile'])
-        else:
-            self.config['system_bandpass'] = numpy.zeros(self.config['n_chans'])
-
-        if (self.config['antenna_bandpass_calfile'] != 'none'):
-            self.config['antenna_bandpass'] = self.get_interpolated_gains(self.config['antenna_bandpass_calfile'])
-        else:
-            self.config['antenna_bandpass'] = numpy.zeros(self.config['n_chans'])
-
-        if (self.config['atten_gain_calfile'] != 'none'):
-            self.config['atten_gain_map'] = getDictFromCSV(cal_files("%s.csv"%(self.config['atten_gain_calfile'])))
-        else:
-            self.config['atten_gain_map'] = {float(i):float(i) for i in numpy.arange(self.config['rf_gain_range'][0],self.config['rf_gain_range'][1]+self.config['rf_gain_range'][2],self.config['rf_gain_range'][2])}
-
-    def get_interpolated_gains(self,fileName):
-        """Retrieves antenna gain mapping files and interpolates data to return values at 'freqs'."""
-        cal_freqs,cal_gains=get_gains_from_csv(cal_files(fileName + '.csv'))
-        inter_freqs=scipy.interpolate.interp1d(cal_freqs,cal_gains,kind='linear')
-        #print ('self.config["freqs"] = %s'%self.config['freqs'])
-        return inter_freqs(self.config['freqs'])
 
     def write(self,section,variable,value):
         print 'Writing to the config file. Mostly, this is a bad idea. Mostly. Doing nothing.'
@@ -171,19 +137,40 @@ class rattyconf:
         fp.close()
 
     def read_int(self,section,variable):
-        self.config[variable]=int(self.cp[section][variable])
+        try:
+            self.config[variable]=int(self.cp[section][variable])
+        except:
+            raise RuntimeError('Error reading integer %s:%s.'%(section,variable)) 
 
     def read_bool(self,section,variable):
-        self.config[variable]=(self.cp[section][variable] != '0')
+        try:
+            value=self.cp[section][variable].strip()
+            if str(value).lower() in ("yes", "y", "true", "True", "t", "1"):
+                self.config[variable]=(True)
+            elif str(value).lower() in ("no",  "n", "false", "f", "False","0", "0.0", "", "none", "[]", "{}"):
+                self.config[variable]=(False)
+            else:
+                raise RuntimeError('Error reading boolean %s:%s.'%(section,variable)) 
+        except:
+            raise RuntimeError('Error reading boolean %s:%s.'%(section,variable)) 
 
     def read_str(self,section,variable):
-        self.config[variable]=self.cp[section][variable].strip()
+        try:
+            self.config[variable]=self.cp[section][variable].strip()
+        except:
+            raise RuntimeError('Error reading string %s:%s.'%(section,variable)) 
 
     def get_line(self,section,variable):
-        return str(self.cp[section][variable]).strip()
+        try:
+            return str(self.cp[section][variable]).strip()
+        except:
+            raise RuntimeError('Error reading %s:%s.'%(section,variable)) 
 
     def read_float(self,section,variable):
-        self.config[variable]=float(self.cp[section][variable])
+        try: 
+            self.config[variable]=float(self.cp[section][variable].strip())
+        except:
+            raise RuntimeError('Error reading float %s:%s.'%(section,variable)) 
 
 
 
@@ -197,7 +184,7 @@ def getDictFromCSV(filename):
             mydict[float(row[0])] = float(row[1])
         return mydict
 
-def get_gains_from_csv(filename):
+def get_gains_from_csv(filename,col1='freq_hz',col2='gain_db'):
     freqs=[]
     gains=[]
     more=True
@@ -207,14 +194,13 @@ def get_gains_from_csv(filename):
     while(more):
         try:
             raw_line=fc.next()
-            freqs.append(numpy.float(raw_line['freq_hz']))
-            gains.append(numpy.float(raw_line['gain_db']))
+            freqs.append(numpy.float(raw_line[col1]))
+            gains.append(numpy.float(raw_line[col2]))
         except:
             more=False
             break
     return freqs,gains
 
 
-cal_file_path = "/etc/ratty2/cal_files/"; #For development
 def cal_files(filename):
     return "%s%s"%(cal_file_path, filename)

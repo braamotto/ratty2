@@ -1,52 +1,36 @@
 [digital_system_parameters]
 bitstream = r2_spec_mkadc_32k_8tap_12b_2013_Mar_20_0624.bof.gz
+#fft shift bitmask. Set to 'auto' to try'n automatically determine this.
+fft_shift = 32736
+#Each ADC count represents how many volts? 250mV/512=0.00048828125
+adc_v_scale_factor=0.00048828125
 
-#n_chans = 16384
-n_chans = 32768
-#How many parallel streams come out of the FFT (how many BRAMs must we read and interleave)?
-n_par_streams = 4
+#How long do you want to accumulate in seconds?
+acc_period=1 
+sample_clk=1800e6
 
+[connection]
+roach_ip = 192.168.14.76
 
-#How many uint bits to represent each value in the BRAMs? Default is uint64.
-spectrum_bits = 64
+[analogue_frontend]
+#the RF switch position.
+#1: 0 - 828 MHz   2: 800 - 1100 MHz - Not implemented  3: 900 - 1670 MHz  4: currently not connected
+band_sel=1
+ignore_low_freq=50e6
+ignore_high_freq=850e6
+flip_spectrum=False
+system_bandpass_calfile=flat_bandpass.csv
+antenna_bandpass_calfile=flat_bandpass.csv
 
-#System digital bandwidth in Hz
-bandwidth = 900000000
-#bandwidth = 850000000
+#set RF attenuators to desired level in dB.  Valid range is -94.5 to 0.
+rf_atten=-10
+#Alternatively, specify the three manually! The first one corresponds to antenna side, the last one is ADC side.
 
-#supports iadc and katadc, only tested with katadc, YMMV with iADC.
-adc_type = adc1x1800-10
-#adc_type = iadc
+rf_atten_gain_calfiles=none,none,none
 
 #When auto-attenuating, what is the target RF level in dBm:
 desired_rf_level = 0
 
-#supports iadc and katadc, only tested with katadc, YMMV with iADC.
-#fft_shift = 16383
-fft_shift = 32736
-adc_levels_acc_len=65536
-
-#How long do you want to accumulate in seconds?
-acc_period=1 
-
-[connection]
-katcp_port = 7147
-roach_ip = 192.168.14.64
-
-[analogue_frontend]
-#set rf_gain to desired level in dB, or else specify 'auto' for automatic:
-rf_gain=0
-
-#don't plot below 10MHz or above 890MHz (this is usually the gaurd band for your anti-aliasing filters, and the low cutoff of your LNA):
-ignore_low_freq=10000000
-ignore_high_freq=890000000
-
 #How much gain does your frontend RF chain have, in dB?
 fe_gain=0
 
-#Enter none if there is no cal file:
-atten_gain_map = none
-system_bandpass = none
-antenna_bandpass = none
-
-adc_cal_file = /etc/ratty2/cal_files/adc_bandpass_20-890MHz_n10dBm_input_32K_sn004.csv
