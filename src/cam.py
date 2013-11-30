@@ -40,14 +40,14 @@ class spec:
             self.logger.error('KATCP connection failure. Connection to ROACH failed.')
             raise RuntimeError("Connection to FPGA board failed.")
 
-        self.rf_frontend=corr.katcp_serial.SerialClient(self.config['roach_ip_str'], timeout=3)
-        time.sleep(0.2)
-        try:
-            self.rf_frontend.ping()
-            self.logger.info('KATCP connection to RF frontend ok.')
-        except:
-            self.logger.error('KATCP connection to RF frontend failed.')
-            raise RuntimeError("Connection to RF frontend box failed.")
+#        self.rf_frontend=corr.katcp_serial.SerialClient(self.config['roach_ip_str'], timeout=3)
+#        time.sleep(0.2)
+#        try:
+#            self.rf_frontend.ping()
+#            self.logger.info('KATCP connection to RF frontend ok.')
+#        except:
+#            self.logger.error('KATCP connection to RF frontend failed.')
+#            raise RuntimeError("Connection to RF frontend box failed.")
 
     def auto_gain(self,print_progress=False):
         """Try to automatically set the RF attenuators. NOT YET IMPLEMENTED FOR RATTY2"""
@@ -114,55 +114,56 @@ class spec:
         self.config['fft_shift'] = fft_shift_adj & self.config['fft_shift']
         return (fft_shift_adj & self.config['fft_shift'])
 
-    def rf_band_get(self):
-        """Grabs the current RF switch state. Returns band integer (switch selection)."""
 
-        if (self.rf_frontend.getd(13)==1 and
-            self.rf_frontend.setd(12)==1 and
-            self.rf_frontend.setd(19)==1 and
-            self.rf_frontend.setd(18)==0 and
-            self.rf_frontend.setd(17)==0 and
-            self.rf_frontend.setd(16)==1 and
-            self.rf_frontend.setd(15)==1 and
-            self.rf_frontend.setd(14)==1):
-            return 1
-
-        elif (self.rf_frontend.getd(13)==1 and
-            self.rf_frontend.setd(12)==0 and
-            self.rf_frontend.setd(19)==1 and
-            self.rf_frontend.setd(18)==1 and
-            self.rf_frontend.setd(17)==1 and
-            self.rf_frontend.setd(16)==1 and
-            self.rf_frontend.setd(15)==0 and
-            self.rf_frontend.setd(14)==1):
-            return 2
-
-        elif (self.rf_frontend.getd(13)==1 and
-            self.rf_frontend.setd(12)==1 and
-            self.rf_frontend.setd(19)==0 and
-            self.rf_frontend.setd(18)==1 and
-            self.rf_frontend.setd(17)==1 and
-            self.rf_frontend.setd(16)==0 and
-            self.rf_frontend.setd(15)==1 and
-            self.rf_frontend.setd(14)==1):
-            return 3
-
-        elif (self.rf_frontend.getd(13)==0 and
-            self.rf_frontend.setd(12)==1 and
-            self.rf_frontend.setd(19)==1 and
-            self.rf_frontend.setd(18)==1 and
-            self.rf_frontend.setd(17)==1 and
-            self.rf_frontend.setd(16)==1 and
-            self.rf_frontend.setd(15)==1 and
-            self.rf_frontend.setd(14)==0):
-            return 4
-        else:
-            raise RuntimeError('Invalid RF switch state. RF frontend fault!')
-
-    def rf_band_set(self,band_sel):
-        """Configures RF switches to select an RF band. Select between 1 and 4.\n
-        1: 0-828 MHz   2: NA  3: 900-1670 MHz  4: allpass
-        """
+#    def rf_band_get(self):
+#        """Grabs the current RF switch state. Returns band integer (switch selection)."""
+#
+#        if (self.rf_frontend.getd(13)==1 and
+#            self.rf_frontend.setd(12)==1 and
+#            self.rf_frontend.setd(19)==1 and
+#            self.rf_frontend.setd(18)==0 and
+#            self.rf_frontend.setd(17)==0 and
+#            self.rf_frontend.setd(16)==1 and
+#            self.rf_frontend.setd(15)==1 and
+#            self.rf_frontend.setd(14)==1):
+#            return 1
+#
+#        elif (self.rf_frontend.getd(13)==1 and
+#            self.rf_frontend.setd(12)==0 and
+#            self.rf_frontend.setd(19)==1 and
+#            self.rf_frontend.setd(18)==1 and
+#            self.rf_frontend.setd(17)==1 and
+#            self.rf_frontend.setd(16)==1 and
+#            self.rf_frontend.setd(15)==0 and
+#            self.rf_frontend.setd(14)==1):
+#            return 2
+#
+#        elif (self.rf_frontend.getd(13)==1 and
+#            self.rf_frontend.setd(12)==1 and
+#            self.rf_frontend.setd(19)==0 and
+#            self.rf_frontend.setd(18)==1 and
+#            self.rf_frontend.setd(17)==1 and
+#            self.rf_frontend.setd(16)==0 and
+#            self.rf_frontend.setd(15)==1 and
+#            self.rf_frontend.setd(14)==1):
+#            return 3
+#
+#        elif (self.rf_frontend.getd(13)==0 and
+#            self.rf_frontend.setd(12)==1 and
+#            self.rf_frontend.setd(19)==1 and
+#            self.rf_frontend.setd(18)==1 and
+#            self.rf_frontend.setd(17)==1 and
+#            self.rf_frontend.setd(16)==1 and
+#            self.rf_frontend.setd(15)==1 and
+#            self.rf_frontend.setd(14)==0):
+#            return 4
+#        else:
+#            raise RuntimeError('Invalid RF switch state. RF frontend fault!')
+#
+    #def rf_band_set(self,band_sel):
+    #    """Configures RF switches to select an RF band. Select between 1 and 4.\n
+    #    1: 0-828 MHz   2: NA  3: 900-1670 MHz  4: allpass
+    #    """
         # RF lineup:
         # 1. RF.IN -- Amp1 --  RF.SW1.4 -- 0-828MHz filterchain -- RF.SW2.3 -- var.att1 -- Amp2 -- var.att2 -- Amp3 -- var.att3 -- Amp4 -- RF.OUT
         # 2.               --  RF.SW1.2 -- N/C                  -- RF.SW2.5 -- 
@@ -180,47 +181,102 @@ class spec:
         #    'switch2_C6' (select port1-port5) : 15,
 
 
-        assert band_sel in range(1,5), "Invalid frequence range %i. Valid frequency ranges are %s."%(band_sel,range(1,5))
+#        assert band_sel in range(1,5), "Invalid frequence range %i. Valid frequency ranges are %s."%(band_sel,range(1,5))
         # 0 - 828 MHz
-        if band_sel  == 1:
-            self.rf_frontend.setd(13, 1)
-            self.rf_frontend.setd(12, 1)
-            self.rf_frontend.setd(19, 1)
-            self.rf_frontend.setd(18, 0)
-            self.rf_frontend.setd(17, 0)
-            self.rf_frontend.setd(16, 1)
-            self.rf_frontend.setd(15, 1)
-            self.rf_frontend.setd(14, 1)
+#        if band_sel  == 1:
+            #self.rf_frontend.setd(13, 1)
+            #self.rf_frontend.setd(12, 1)
+            #self.rf_frontend.setd(19, 1)
+            #self.rf_frontend.setd(18, 0)
+            #self.rf_frontend.setd(17, 0)
+            #self.rf_frontend.setd(16, 1)
+            #self.rf_frontend.setd(15, 1)
+            #self.rf_frontend.setd(14, 1)
         # 800 - 1100 MHz - Not implemented
-        elif band_sel == 2:
-            self.rf_frontend.setd(13, 1)
-            self.rf_frontend.setd(12, 0)
-            self.rf_frontend.setd(19, 1)
-            self.rf_frontend.setd(18, 1)
-            self.rf_frontend.setd(17, 1)
-            self.rf_frontend.setd(16, 1)
-            self.rf_frontend.setd(15, 0)
-            self.rf_frontend.setd(14, 1)
+#        elif band_sel == 2:
+            #self.rf_frontend.setd(13, 1)
+            #self.rf_frontend.setd(12, 0)
+            #self.rf_frontend.setd(19, 1)
+            #self.rf_frontend.setd(18, 1)
+            #self.rf_frontend.setd(17, 1)
+            #self.rf_frontend.setd(16, 1)
+            #self.rf_frontend.setd(15, 0)
+            #self.rf_frontend.setd(14, 1)
         # 900 - 1670 MHz
-        elif band_sel == 3:
-            self.rf_frontend.setd(13, 1)
-            self.rf_frontend.setd(12, 1)
-            self.rf_frontend.setd(19, 0)
-            self.rf_frontend.setd(18, 1)
-            self.rf_frontend.setd(17, 1)
-            self.rf_frontend.setd(16, 0)
-            self.rf_frontend.setd(15, 1)
-            self.rf_frontend.setd(14, 1)
+#        elif band_sel == 3:
+            #self.rf_frontend.setd(13, 1)
+            #self.rf_frontend.setd(12, 1)
+            #self.rf_frontend.setd(19, 0)
+            #self.rf_frontend.setd(18, 1)
+            #self.rf_frontend.setd(17, 1)
+            #self.rf_frontend.setd(16, 0)
+            #self.rf_frontend.setd(15, 1)
+            #self.rf_frontend.setd(14, 1)
         # currently not connected
-        elif band_sel == 4:
-            self.rf_frontend.setd(13, 0)
-            self.rf_frontend.setd(12, 1)
-            self.rf_frontend.setd(19, 1)
-            self.rf_frontend.setd(18, 1)
-            self.rf_frontend.setd(17, 1)
-            self.rf_frontend.setd(16, 1)
-            self.rf_frontend.setd(15, 1)
-            self.rf_frontend.setd(14, 0)
+#        elif band_sel == 4:
+            #self.rf_frontend.setd(13, 0)
+            #self.rf_frontend.setd(12, 1)
+            #self.rf_frontend.setd(19, 1)
+            #self.rf_frontend.setd(18, 1)
+            #self.rf_frontend.setd(17, 1)
+            #self.rf_frontend.setd(16, 1)
+            #self.rf_frontend.setd(15, 1)
+            #self.rf_frontend.setd(14, 0)
+
+    def _rf_band_switch_calc(self,rf_band=None):
+        """Calculates the bitmap for the RF switches to select an RF band. Select a band between 1 and 4.\n
+        0: 0-828 MHz   1: NA  2: 900-1670 MHz  3: NA
+        """
+        # RF lineup:
+        # 1. RF.IN -- Amp1 --  RF.SW1.4 -- 0-828MHz filterchain -- RF.SW2.3 -- var.att1 -- Amp2 -- var.att2 -- Amp3 -- var.     att3 -- Amp4 -- RF.OUT
+        # 2.               --  RF.SW1.2 -- N/C                  -- RF.SW2.5 --
+        # 3.               --  RF.SW1.5 -- 900MHz-1.67GHz chain -- RF.SW2.2 --
+        # 4.               --  RF.SW1.3 -- N/C                  -- RF.SW2.4 --
+        #                                       bitOLD: bitNEW:
+        #    'switch1_C5' (select port1-port2) : 31,    0
+        #    'switch1_C3' (select port1-port3) : 30,    1
+        #    'switch1_C4' (select port1-port4) : 29,    2   
+        #    'switch1_C6' (select port1-port5) : 28,    3
+
+        #    'switch2_C5' (select port1-port2) : 27,    4
+        #    'switch2_C3' (select port1-port3) : 26,    5
+        #    'switch2_C4' (select port1-port4) : 25,    6
+        #    'switch2_C6' (select port1-port5) : 24,    7
+        rf_bands=[(29,26),(31,24),(28,27),(30,25)]
+        #rf_bands=[(2,5),(0,7),(3,4),(1,6)]
+        if rf_band==None: rf_band=self.config['band_sel']
+        assert rf_band<4,"Requested RF band is out of range (0-3)"
+        bitmap=(1<<(rf_bands[rf_band][0]))+(1<<(rf_bands[rf_band][1]))
+        return rf_band,bitmap
+
+    def fe_set(self,rf_band=None,gain=None):
+        """Configures the analogue box: selects bandpass filters and adjusts RF attenuators; updates global config with changes.\n
+        Select a band between 0 and 3: \n
+        \t 0: 0-828 MHz \n
+        \t 1: 750-1100 MHz \n
+        \t 2: 900-1670 MHz \n
+        \t 3: passthrough \n
+        Valid gain range is -94.5 to 0dB; in this case we distribute the gain evenly across the 3 attenuators. \n
+        Alternatively, pass a tuple or list to specify the three values explicitly. \n
+        If no gain is specified, default to whatever's in the config file \n"""
+        rf_band,bitmap=self._rf_band_switch_calc(rf_band=rf_band) #8bits
+        self.config['band_sel']=rf_band
+        self.logger.info("Selected RF band %i."%rf_band)
+
+        self.config['rf_attens']=self._rf_atten_calc(gain)
+        self.config['rf_gain']=self.config['fe_amp']
+        self.config['rf_atten']=0.0
+        for (att,atten) in enumerate(self.config['rf_attens']):
+            bitmap+=int(atten*2)<<(8+(6*int(att))) #6 bits each, following on from above rf_band_select.
+            self.logger.info("Set attenuator %i to %3.1f"%(att,atten))
+            self.config['rf_atten']+=atten
+            if self.config['rf_atten_gain_calfiles'][att] != 'none':
+                self.config['rf_gain']+=self.get_interpolated_attens(fileName=self.config['rf_atten_gain_calfiles'][att],setpoint=atten)
+            else:
+                self.config['rf_gain']+=atten
+        #print '0x%08X\n'%bitmap
+        self.fpga.write_int('rf_ctrl0',bitmap)
+
 
     def initialise(self,skip_program=False, clk_check=False, input_sel='Q',print_progress=False):
         """Initialises the system to defaults."""
@@ -242,14 +298,8 @@ class spec:
             if print_progress: print 'ok, %i MHz'%est_rate
         
         if print_progress:
-            print '\tSelecting RF band %i with usable RF frequency %i to %i MHz...'%(self.config['band_sel'],self.config['ignore_low_freq']/1.e6,self.config['ignore_high_freq']/1.e6),
-        self.rf_band_set(self.config['band_sel'])
-        if print_progress: print 'ok'
-
-        if print_progress:
-            print '\tConfiguring RF attenuators... ',
-            sys.stdout.flush()
-        self.rf_atten_set(print_progress=print_progress)
+            print '\tSelecting RF band %i (with usable RF frequency %i to %i MHz) and adjusting attenuators...'%(self.config['band_sel'],self.config['ignore_low_freq']/1.e6,self.config['ignore_high_freq']/1.e6),
+        self.fe_set()
         if print_progress: print 'ok: %3.1fdb total (%2.1fdb, %2.1fdB, %2.1fdB)'%(self.config['rf_atten'],self.config['rf_attens'][0],self.config['rf_attens'][1],self.config['rf_attens'][2])
     
         if print_progress:
@@ -339,7 +389,7 @@ class spec:
         cal_spectrum -= self.config['pfb_scale_factor']
         cal_spectrum -= self.config['system_bandpass']
         if self.config['antenna_bandpass_calfile'] != 'none':
-            cal_spectrum = dbm_to_dbuv(cal_spectrum)
+            cal_spectrum = ratty2.cal.dbm_to_dbuv(cal_spectrum)
             cal_spectrum += self.config['ant_factor']
         #print '\t\tMean ant_bp: %f'%numpy.mean(cal_spectrum)
     
@@ -420,82 +470,110 @@ class spec:
              self.fpga.write_int('control', value)
              run_cnt = run_cnt +1
 
-    def rf_atten_set(self,gain=None,print_progress=False):
-        """Configures the 3 RF attenuators in the RF box. \n
+    def _rf_atten_calc(self,gain=None,print_progress=False):
+        """Calculates the attenuations for each of the 3 RF attenuators in the RF box. \n
         \t Valid range gain is -94.5 to 0dB; in this case we distribute the gain evenly across the 3 attenuators. \n
-        \t Specify 'auto' to attempt automatic gain calibration. \n
         \t Alternatively, pass a tuple or list to specify the three values explicitly. \n
         \t If no gain is specified, default to whatever's in the config file \n"""
 
+        #\t Specify 'auto' to attempt automatic gain calibration. \n
+        
+#        if len is 3, cont
+#        elif len is 1, calc 3 attens
+#        elif none, pull from config file
+#       round to 0.5dB, return.
+        
 
-        #Try to figure out the frontend gain.
-        self.config['rf_gain']=self.config['fe_amp']
-        if self.config.has_key('rf_atten'):
-            self.config['rf_attens']=[]
-            for att in range(3):
-                #TODO: add smarts here.
-                self.config['rf_attens'].append(self.config['rf_atten']/3.)
-
-        if self.config.has_key('rf_attens'):
-            for att in range(3):
-                self.config['rf_attens'][att]=round(self.config['rf_attens'][att]*2)/2
-                if self.config['rf_atten_gain_calfiles'][att] != 'none':
-                    self.config['rf_gain']+=self.get_interpolated_attens(fileName=self.config['rf_atten_gain_calfiles'][att],setpoint=self.config['rf_attens'][att])
-                else:
-                    self.config['rf_gain']+=self.config['rf_attens'][att]
-        else:
-            raise RuntimeError('Unable to figure out your frontend gains; please specify rf_atten (float) or rf_attens (list of 3 floats)!')
-
-
-        self.config['rf_gain']=self.config['fe_amp']
-        set_gain=0
-        if gain==None:
-        #Try to figure out the desired frontend gain from the config file.
-            if self.config.has_key('rf_atten'):
-                self.config['rf_attens']=[]
-                for att in range(3):
-                    #TODO: add smarts here.
-                    self.config['rf_attens'].append(self.config['rf_atten']/3.)
-
+        if type(gain)==list or type(gain)==numpy.ndarray or type(gain)==tuple:
+            rf_attens=gain
         elif type(gain)==int  or type(gain)==float:
-            for att in range(3):
-                set_gain=-self._rf_atten_write(att,0-gain/3.)   
-                self.config['rf_attens'][att]=set_gain
-
-        elif type(gain)==list or type(gain)==numpy.ndarray or type(a)==tuple:
-            assert len(gain)==3,'Incorect number of gains specified. Please input a list/tuple of 3 numbers'
-            self.config['rf_atten']=0
-            for att in range(3):
-                set_gain-=self._rf_atten_write(att,0-gain[att])   
-                self.config['rf_attens'][att]=set_gain
-                self.config['rf_atten']+=set_gain
-                if self.config['rf_atten_gain_calfiles'][att] != 'none':
-                    self.config['rf_gain']+=self.get_interpolated_attens(fileName=self.config['rf_atten_gain_calfiles'][att],setpoint=set_gain)
-                else:
-                    self.config['rf_gain']+=set_gain
-
-        elif (gain=='auto') or (gain == 'Auto') or (gain == 'AUTO'):
-            self.auto_gain(print_progress=print_progress)
-
+            rf_attens=[gain/3. for att in range(3)]
+        elif gain==None:
+            self.logger.info('Using attenuator settings from config file.')
+            if self.config.has_key('rf_atten'):
+                rf_attens=[self.config['rf_atten']/3. for att in range(3)]
+            elif self.config.has_key('rf_attens'):   
+                self.logger.info('Using 3 user-supplied attenuator settings from config file.')
+            else:
+                raise RuntimeError('Unable to figure out your config file\'s frontend gains; please specify rf_atten (float) or rf_attens (list of 3 floats)!')
         else:
-            raise RuntimeError("Could not interpret your gain request. Input a float, a list of 3 values for each attenuator or 'auto'.")
+            raise RuntimeError('Unable to figure out your requested attenuation; please specify a single float or a list of 3 floats!')
+            
+        assert len(rf_attens)==3,'Incorect number of gains specified. Please input a list/tuple of 3 numbers'
+        for att in range(3):
+            assert (-31.5<=rf_attens[att]<=0),"Range for attenuator %i (%3.1f) is out of range (-31.5 to 0)."%(att,rf_attens[att])
+        return [round(att*2)/2 for att in rf_attens] 
 
-    def _rf_atten_write(self,attenuator,attenuation):
-        """Writes to an RF attenuator. Valid attenuators are 0-2 with a range of 0 to 31.5db of attenuation. Attenuator 0 is closest to the antenna, attenuator 2 is closest to the ADC."""
-        #    'atten0_le_pin' : 5,
-        #    'atten1_le_pin' : 6,
-        #    'atten2_le_pin' : 7,
-        #    'atten_clk_pin' : 3,
-        #    'atten_data_pin': 4}
-        if attenuator == 0:
-            set_att=self.rf_frontend.set_atten_db(le_pin=5,data_pin=4,clk_pin=3,atten_db=attenuation)
-        elif attenuator == 1:
-            set_att=self.rf_frontend.set_atten_db(le_pin=6,data_pin=4,clk_pin=3,atten_db=attenuation)
-        elif attenuator == 2:
-            set_att=self.rf_frontend.set_atten_db(le_pin=7,data_pin=4,clk_pin=3,atten_db=attenuation)
-        else:
-            raise RuntimeError("Invalid attenuator %i. Valid attenuators are %s."%(attenuation,range(0,4)))
-        return set_att
+
+#        #start by grabbing the defaults from the config file; we'll override these in a minute if the user's asked for something else...
+#        #Try to figure out the frontend gain.
+#        self.config['rf_gain']=self.config['fe_amp']
+#        if self.config.has_key('rf_atten'):
+#            self.config['rf_attens']=[]
+#            for att in range(3):
+#                #TODO: add smarts here.
+#                self.config['rf_attens'].append(self.config['rf_atten']/3.)
+#
+#        if self.config.has_key('rf_attens'):
+#            for att in range(3):
+#                self.config['rf_attens'][att]=round(self.config['rf_attens'][att]*2)/2
+#                if self.config['rf_atten_gain_calfiles'][att] != 'none':
+#                    self.config['rf_gain']+=self.get_interpolated_attens(fileName=self.config['rf_atten_gain_calfiles'][att],setpoint=self.config['rf_attens'][att])
+#                else:
+#                    self.config['rf_gain']+=self.config['rf_attens'][att]
+#        else:
+#            raise RuntimeError('Unable to figure out your frontend gains; please specify rf_atten (float) or rf_attens (list of 3 floats)!')
+#
+#
+#        self.config['rf_gain']=self.config['fe_amp']
+#        set_gain=0
+#        if gain==None:
+#        #Try to figure out the desired frontend gain from the config file.
+#            if self.config.has_key('rf_atten'):
+#                self.config['rf_attens']=[]
+#                for att in range(3):
+#                    #TODO: add smarts here.
+#                    self.config['rf_attens'].append(self.config['rf_atten']/3.)
+#
+#        elif type(gain)==int  or type(gain)==float:
+#            for att in range(3):
+#                set_gain=-self._rf_atten_write(att,0-gain/3.)   
+#                self.config['rf_attens'][att]=set_gain
+#
+#        elif type(gain)==list or type(gain)==numpy.ndarray or type(a)==tuple:
+#            assert len(gain)==3,'Incorect number of gains specified. Please input a list/tuple of 3 numbers'
+#            self.config['rf_atten']=0
+#            for att in range(3):
+#                set_gain-=self._rf_atten_write(att,0-gain[att])   
+#                self.config['rf_attens'][att]=set_gain
+#                self.config['rf_atten']+=set_gain
+#                if self.config['rf_atten_gain_calfiles'][att] != 'none':
+#                    self.config['rf_gain']+=self.get_interpolated_attens(fileName=self.config['rf_atten_gain_calfiles'][att],setpoint=set_gain)
+#                else:
+#                    self.config['rf_gain']+=set_gain
+#
+#        elif (gain=='auto') or (gain == 'Auto') or (gain == 'AUTO'):
+#            self.auto_gain(print_progress=print_progress)
+#
+#        else:
+#            raise RuntimeError("Could not interpret your gain request. Input a float, a list of 3 values for each attenuator or 'auto'.")
+#
+#    def _rf_atten_write(self,attenuator,attenuation):
+#        """Writes to an RF attenuator. Valid attenuators are 0-2 with a range of 0 to 31.5db of attenuation. Attenuator 0 is closest to the antenna, attenuator 2 is closest to the ADC."""
+#        #    'atten0_le_pin' : 5,
+#        #    'atten1_le_pin' : 6,
+#        #    'atten2_le_pin' : 7,
+#        #    'atten_clk_pin' : 3,
+#        #    'atten_data_pin': 4}
+#        if attenuator == 0:
+#            set_att=self.rf_frontend.set_atten_db(le_pin=5,data_pin=4,clk_pin=3,atten_db=attenuation)
+#        elif attenuator == 1:
+#            set_att=self.rf_frontend.set_atten_db(le_pin=6,data_pin=4,clk_pin=3,atten_db=attenuation)
+#        elif attenuator == 2:
+#            set_att=self.rf_frontend.set_atten_db(le_pin=7,data_pin=4,clk_pin=3,atten_db=attenuation)
+#        else:
+#            raise RuntimeError("Invalid attenuator %i. Valid attenuators are %s."%(attenuation,range(0,4)))
+#        return set_att
 
     def adc_amplitudes_get(self):
         """Gets the ADC RMS amplitudes."""

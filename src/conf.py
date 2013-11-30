@@ -1,6 +1,6 @@
 import iniparse, exceptions, socket, struct, numpy, os,scipy
 """
-Library for parsing CASPER correlator configuration files
+Library for parsing RATTY configuration files
 
 Author: Jason Manley
 """

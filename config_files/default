@@ -1,5 +1,5 @@
 [digital_system_parameters]
-bitstream = r2_spec_mkadc_32k_8tap_12b_2013_Mar_20_0624.bof.gz
+bitstream = r2_spec_mk_32k_rf_2013_Nov_20_1103.bof.gz
 #fft shift bitmask. Set to 'auto' to try'n automatically determine this.
 fft_shift = 32736
 #Each ADC count represents how many volts? 250mV/512=0.00048828125
@@ -32,5 +32,5 @@ rf_atten_gain_calfiles=none,none,none
 desired_rf_level = 0
 
 #How much gain does your frontend RF chain have, in dB?
-fe_gain=0
+fe_amp=0
 
