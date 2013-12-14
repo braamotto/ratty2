@@ -149,7 +149,7 @@ class cal:
             self.config[key]=kwargs[key]
         self.config['bandwidth']=self.config['sample_clk']/2
         self.config['chan_width']=numpy.float(self.config['bandwidth'])/self.config['n_chans']
-        self.config['freqs']=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans'] #channel center freqs   in Hz
+        self.calc_freqs()
 
         if (self.config['system_bandpass_calfile'] != 'none'):
             self.config['system_bandpass'] = self.get_interpolated_gains(self.config['system_bandpass_calfile'])
@@ -169,6 +169,22 @@ class cal:
         #Override any defaults:
         for key in kwargs:
             self.config[key]=kwargs[key]
+
+    def calc_freqs(self):
+        "Calculate and store in config the centre frequency that each spectral channel represents. Order is always lowest freq to highest freq."
+#TODO: make this work for other nyquist zones!
+        #self.config['freqs']=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans'] #channel center freqs   in Hz
+        #figure out which Nyquist zone we're in:
+        band_centre=(self.config['ignore_low_freq'] + self.config['ignore_low_freq'])/2.0
+        self.config['nyquist_zone']=int(numpy.floor(band_centre/self.config['bandwidth']))+1 #industry standard to number baseband as zone 1, not zero.
+        freqs=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans'] + (self.config['nyquist_zone']-1)*self.config['bandwidth'] #channel center freqs   in Hz
+        if (self.config['nyquist_zone'] & 0x01):
+            self.config['flip_spectrum']=False
+        else:
+            self.config['flip_spectrum']=True
+        self.config['freqs']=freqs
+        #print 'Nyquist zone is %i, with frequencies:'%self.config['nyquist_zone'] 
+        #print freqs
 
     def plot_bandshape(self,freqs):
         import pylab
@@ -215,10 +231,12 @@ class cal:
 
     def freq_to_chan(self,frequency,n_chans=None):
         """Returns the channel number where a given frequency is to be found. Frequency is in Hz."""
-        if frequency<0: 
-            frequency=self.config['bandwidth']+frequency
-            #print 'you want',frequency
-        if frequency>=self.config['bandwidth']: raise RuntimeError("that frequency is too high.")
+#        if frequency<0: 
+#            frequency=self.config['bandwidth']+frequency
+#            #print 'you want',frequency
+        #print self.config['freqs']
+        if frequency>self.config['freqs'][-1]: raise RuntimeError("Requested frequency (%fHz) is too high. Max for your configuration is %fHz."%(frequency,self.config['freqs'][-1]))
+        if frequency<self.config['freqs'][0]: raise RuntimeError("that frequency (%fHz) is too low. Min for your configuration is %fHz."%(frequency,self.             config['freqs'][0]))
         if n_chans==None:
             n_chans=self.config['n_chans']
         return round(float(frequency)/self.config['bandwidth']*n_chans)%n_chans
@@ -237,25 +255,30 @@ class cal:
         n_accs=len(raw_data)/self.config['n_chans']/2
         window=numpy.hamming(self.config['n_chans']*2)
         spectrum=numpy.zeros(self.config['n_chans'])
-        freqs=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans']
-        ret['freqs']=freqs
+        #freqs=numpy.arange(self.config['n_chans'])*float(self.config['bandwidth'])/self.config['n_chans'] 
+        #user now specifies global options on command line (can override any variable), so can use global config; no need to deal with custom chans/freqs.
+        ret['freqs']=self.config['freqs']
         for acc in range(n_accs):
             spectrum += numpy.abs((numpy.fft.rfft(ret['adc_v'][self.config['n_chans']*2*acc:self.config['n_chans']*2*(acc+1)]*window)[0:self.config['n_chans']])) 
         ret['adc_spectrum_dbm']  = 20*numpy.log10(spectrum/n_accs/self.config['n_chans']*6.14)
-        #get config['system_bandpass']:
+
+        # no need to recalc these here every time; use global config.
         #if self.config['system_bandpass_calfile'] != 'none':
-        cal_freqs,cal_gains=get_gains_from_csv(cal_files(self.config['system_bandpass_calfile']))
-        inter_freqs=scipy.interpolate.interp1d(cal_freqs,cal_gains,kind='linear')
-        bp=inter_freqs(freqs)
-        ret['system_bandpass']=bp
+        #cal_freqs,cal_gains=get_gains_from_csv(cal_files(self.config['system_bandpass_calfile']))
+        #inter_freqs=scipy.interpolate.interp1d(cal_freqs,cal_gains,kind='linear')
+        #bp=inter_freqs(freqs)
+        #ret['system_bandpass']=bp
+        ret['system_bandpass']=self.config['system_bandpass']
         #else: bp=0
         ret['input_spectrum_dbm']=ret['adc_spectrum_dbm']-bp-self.config['rf_gain']
 
         if self.config['antenna_bandpass_calfile'] != 'none':
             #get antenna factor:
-            cal_freqs,cal_gains=get_gains_from_csv(cal_files(self.config['antenna_bandpass_calfile']))
-            inter_freqs=scipy.interpolate.interp1d(cal_freqs,cal_gains,kind='linear')
-            af=af_from_gain(freqs,inter_freqs(freqs))
+            # no need to recalc these here every time; use global config.
+            #cal_freqs,cal_gains=get_gains_from_csv(cal_files(self.config['antenna_bandpass_calfile']))
+            #inter_freqs=scipy.interpolate.interp1d(cal_freqs,cal_gains,kind='linear')
+            #af=af_from_gain(freqs,inter_freqs(freqs))
+            af=self.config['ant_factor']
             ret['ant_factor']=af
             ret['antenna_bandpass']=inter_freqs(freqs)
             ret['input_spectrum_dbuv'] = dbm_to_dbuv(ret['input_spectrum_dbm']) + af 

@@ -207,6 +207,8 @@ def parseargs(args):
             ret[arg[0]]=ast.literal_eval(arg[1])
         except ValueError:
             ret[arg[0]]=arg[1]
+        except SyntaxError:
+            ret[arg[0]]=arg[1]
     return ret
 
 if __name__ == '__main__':

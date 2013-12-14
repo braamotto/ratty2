@@ -17,7 +17,7 @@ cal_file_path = "/etc/ratty2/cal_files/"; #For development
 class rattyconf:    
     def __init__(self, **kwargs):
         self.config_file = kwargs['config_file']
-        self.config_file_name = os.path.split(self.config_file)[1]
+        #self.config_file_name = os.path.split(self.config_file)[1]
         self.cp = iniparse.INIConfig(open(self.config_file, 'rb'))
         self.config = kwargs
         self.read_common()
@@ -98,7 +98,7 @@ class rattyconf:
         self.read_float('analogue_frontend','fe_amp')
         self.read_float('analogue_frontend','ignore_high_freq')
         self.read_float('analogue_frontend','ignore_low_freq')
-        self.read_bool('analogue_frontend','flip_spectrum')
+#        self.read_bool('analogue_frontend','flip_spectrum')
         self.config['antenna_bandpass_calfile']=self.get_line('analogue_frontend','antenna_bandpass_calfile')
         self.config['system_bandpass_calfile']=self.get_line('analogue_frontend','system_bandpass_calfile')
         self.config['rf_atten_gain_calfiles']=[cf for cf in (self.get_line('analogue_frontend','rf_atten_gain_calfiles')).split(LISTDELIMIT)]

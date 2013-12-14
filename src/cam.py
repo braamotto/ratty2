@@ -242,8 +242,8 @@ class spec:
         #    'switch2_C3' (select port1-port3) : 26,    5
         #    'switch2_C4' (select port1-port4) : 25,    6
         #    'switch2_C6' (select port1-port5) : 24,    7
-        rf_bands=[(29,26),(31,24),(28,27),(30,25)]
-        #rf_bands=[(2,5),(0,7),(3,4),(1,6)]
+        #rf_bands=[(29,26),(31,24),(28,27),(30,25)]
+        rf_bands=[(2,5),(1,7),(3,4),(0,6)]
         if rf_band==None: rf_band=self.config['band_sel']
         assert rf_band<4,"Requested RF band is out of range (0-3)"
         bitmap=(1<<(rf_bands[rf_band][0]))+(1<<(rf_bands[rf_band][1]))
@@ -267,7 +267,7 @@ class spec:
         self.config['rf_gain']=self.config['fe_amp']
         self.config['rf_atten']=0.0
         for (att,atten) in enumerate(self.config['rf_attens']):
-            bitmap+=int(atten*2)<<(8+(6*int(att))) #6 bits each, following on from above rf_band_select.
+            bitmap+=(~(int(-atten*2)))<<(8+(6*int(att))) #6 bits each, following on from above rf_band_select.
             self.logger.info("Set attenuator %i to %3.1f"%(att,atten))
             self.config['rf_atten']+=atten
             if self.config['rf_atten_gain_calfiles'][att] != 'none':
@@ -298,7 +298,7 @@ class spec:
             if print_progress: print 'ok, %i MHz'%est_rate
         
         if print_progress:
-            print '\tSelecting RF band %i (with usable RF frequency %i to %i MHz) and adjusting attenuators...'%(self.config['band_sel'],self.config['ignore_low_freq']/1.e6,self.config['ignore_high_freq']/1.e6),
+            print '\tSelecting RF band %i (%i-%i MHz) and adjusting attenuators...'%(self.config['band_sel'],self.config['ignore_low_freq']/1.e6,self.config['ignore_high_freq']/1.e6),
         self.fe_set()
         if print_progress: print 'ok: %3.1fdb total (%2.1fdb, %2.1fdB, %2.1fdB)'%(self.config['rf_atten'],self.config['rf_attens'][0],self.config['rf_attens'][1],self.config['rf_attens'][2])
     
