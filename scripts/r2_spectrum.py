@@ -259,7 +259,7 @@ try:
             r.logger.setLevel(logging.INFO)
         print 'done.'
 
-        r.initialise(skip_program=(not opts.fpga_prog), print_progress=True)
+        r.initialise(skip_program=(not opts.fpga_prog), print_progress=True, clk_check=True)
         #r.rf_frontend.stop() #disconnect from the RF interface, in case other instances want to take control while we're running.
 
         usrlog=('Starting file at %s (%i).'%(time.ctime(),int(time.time())))

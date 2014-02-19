@@ -19,7 +19,8 @@ roach_ip = 192.168.14.76
 band_sel=1
 ignore_low_freq=1e6
 ignore_high_freq=899e6
-system_bandpass_calfile=flat_bandpass.csv
+#system_bandpass_calfile=flat_bandpass.csv
+system_bandpass_calfile=none
 #antenna_bandpass_calfile=flat_bandpass.csv
 antenna_bandpass_calfile=none
 
